@@ -1,0 +1,21 @@
+---
+title: "Redes multinomiales"
+author: "Marissa"
+format:
+   html:
+     toc: true
+     html-math-method: katex
+     embed-resources: true 
+     self-contained-math: true
+     df-print: kable
+editor: source
+---
+
+```{r}
+install.packages("robotstxt")
+```
+```{r}
+library(robotstxt)
+```
+
+
