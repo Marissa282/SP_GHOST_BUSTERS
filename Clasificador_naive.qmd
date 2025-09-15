@@ -427,4 +427,35 @@ recall
 ```{r}
 f1
 ```
+## Laplace optimizado 
 
+*✏️ Como se habrán dado cuenta, puede ser arbitraria la selección de este parámetro, intenten realizar cross-validation para seleccionar el valor óptimo.*
+
+```{r}
+
+# Definir grid (solo laplace)
+grid <- expand.grid(
+  laplace = c(0.5, 1, 2, 5),
+  usekernel = FALSE,   # para Poisson no usamos kernel
+  adjust = 1           # default
+)
+
+#Control de cross-validation
+ctrl <- trainControl(method = "cv", number = 5)  # 5-fold CV
+
+# Entrenamiento con CV 
+set.seed(123)
+nb_cv <- train(
+  x = Xtr_bin,
+  y = y_train_bin,
+  method = "naive_bayes",
+  trControl = ctrl,
+  tuneGrid = grid,
+  usepoisson = TRUE  # lo pasamos aquí
+)
+
+# Mejor parámetro
+nb_cv$bestTune
+```
+
+Con base en el cross-validation, laplace = 0.5 es el valor óptimo.
