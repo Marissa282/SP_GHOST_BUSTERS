@@ -357,3 +357,22 @@ cm_nb2_bin$overall["Accuracy"]
 ```{r}
 cm_nb2_bin$table
 ```
+## naive_bayes() con use poisson 
+*✏️ Un problema que enfrentan estas primeras implementaciones del clasificador naïve Bayes es el supuesto de la distribución normal para los nodos hijo. Este supuesto parece poco pertinente en este caso debido a que lo que contiene nuestra matriz de datos son en realidad conteos. La distribución Poisson resulta una mejor alternativa para este tipo de datos. Pueden utilizar esta distribución en la función naive_bayes() del paquete naivebayes mediante el argumento usepoisson = TRUE.*
+
+```{r}
+# naive_bayes()
+#entrenar
+mod_nb2_bin = naive_bayes(x = X_train, y = y_train_bin, usepoisson = TRUE)
+#predecir
+pred_nb2_bin   = predict(mod_nb2_bin, X_test)
+#Alinear niveles y métricas
+pred_nb2_bin = factor(pred_nb2_bin, levels = levels(y_train_bin))
+y_test_bin = factor(y_test_bin,  levels = levels(y_train_bin))
+#resultados
+cm_nb2_bin  = confusionMatrix(pred_nb2_bin, y_test_bin)   # data, reference
+cm_nb2_bin$overall["Accuracy"]
+```
+```{r}
+cm_nb2_bin$table
+```
