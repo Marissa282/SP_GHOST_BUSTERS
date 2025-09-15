@@ -376,3 +376,55 @@ cm_nb2_bin$overall["Accuracy"]
 ```{r}
 cm_nb2_bin$table
 ```
+
+## naive_bayes() con Laplace
+*✏️ Otro problema que enfrentamos en este tipo de datos es que existen muchos ceros en la matriz de datos. Una posible solución es utilizar una técnica de suavizamiento conocida como Laplace smoothing. Investiguen sobre esta técnica e impleméntenla en su clasificador.*
+
+```{r}
+
+#vimos que el binarizar nuestras X como aparecen o no aparecne ayudó a mejorar nuestro modelo, así que lo implementamos. 
+
+#Binarizar: aparece (TRUE) / no aparece (FALSE)
+Xtr_bin = as.data.frame(as.matrix(X_train) > 0)
+Xte_bin = as.data.frame(as.matrix(X_test) > 0)
+
+#Alineamos a mismos factors
+Xtr_bin[] = lapply(Xtr_bin, factor, levels = c(FALSE, TRUE))
+Xte_bin[] = lapply(Xte_bin, factor, levels = c(FALSE, TRUE))
+
+#entrenamos
+mod_nb_bin = suppressWarnings( naive_bayes(x = Xtr_bin, y = y_train_bin,  usepoisson = TRUE, laplace = 0.5))
+
+#predecir
+pred_nb_bin = predict(mod_nb_bin, Xte_bin)
+
+#alinear a mismoa factors
+pred_nb_bin = factor(pred_nb_bin, levels = levels(y_train_bin))
+y_test_bin  = factor(y_test_bin,  levels = levels(y_train_bin))
+
+#resultados 
+cm_nb_bin = confusionMatrix(pred_nb_bin, y_test_bin)  # data, reference
+
+cm_nb_bin$overall["Accuracy"] 
+precision = cm_nb_bin$byClass["Pos Pred Value"]
+recall    = cm_nb_bin$byClass["Sensitivity"]
+f1        = 2 * precision * recall / (precision + recall) #f1 de haunted places
+
+```
+
+```{r}
+cm_nb_bin$table
+```
+
+```{r}
+precision
+```
+
+```{r}
+recall
+```
+
+```{r}
+f1
+```
+
