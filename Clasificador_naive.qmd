@@ -158,6 +158,38 @@ stories_clean = stories_clean  |>
   select(-tot)           # ocultamos la columna
 ```
 
+# SPARSE MATRIX
 
+```{r}
+library(Matrix)    # matriz dispersa
+library(e1071)     # naiveBayes sencillo
+library(naivebayes) # naiveBayes 
+```
+
+*✏️ Construyan una sparse matrix que incluya la frecuencia de cada palabra en los relatos scrapeados, donde cada renglón representa un relato diferente y donde las columnas son las diferentes palabras. Esta matriz también debe contener el tipo de evento paranormal. La función unnest_tokens() les puede ayudar. Consideren eliminar las palabras comunes en inglés a través de las stop words. Todo este proceso se conoce como un count vectorizer, que significa transformar texto a vectores.*
+
+```{r}
+#matriz X, donde filas = títulos, columnas = palabras, valores = frecuencias
+X = stories_clean |>
+  count(title, word) |>
+  cast_sparse(title, word, n) #sparse matrix
+
+#vector y multiclase 
+meta = stories|> distinct(title, paranormal_type) #title y su cat
+y = meta$paranormal_type[ match(rownames(X), meta$title) ] #match entre titles que devuelve la cat correcta
+
+stopifnot(length(y) == nrow(X)) #verificamos que y y x tengan misma longitud 
+```
+
+```{r}
+#Visualizamos X en df para revisar que todo esté en orden
+# Pasar rownames a columna llamada "doc_id"
+X_df <- as.data.frame(as.matrix(X))
+X_df <- tibble::rownames_to_column(X_df, var = "doc_id")
+
+# Ver primeras filas
+head(X_df, 10)
+```
+Estamos usando un formato de sparse matrix que no necesita tanta memoria. Para visualizar que la conversión haya sido la desada, convertimos a formato de data frame y verificamos que todo estuviera de manera adecuada. 
 
 
