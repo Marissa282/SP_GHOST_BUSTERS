@@ -300,3 +300,21 @@ f1 = 2 * precision * recall / (precision + recall) #f1 score
 f1
 ```
 
+# Y DE DOS CLASES
+*✏️ La clasificación multiclase impone un mayor desafío, para facilitar las cosas dicotomizaremos el tipo de evento paranormal. Con ayuda de la función case_when() pueden recodificar el tipo de evento paranormal, por ejemplo, si es Haunted Places u Other.*
+
+```{r}
+#utilizamos misma partición y dicotomizamos sobre y_train y y_test 
+#si se llama distinto a haunted places, que se llame Other
+y_train_bin = case_when(
+  str_detect(y_train, regex("Haunted Places", ignore_case = TRUE)) ~ "Haunted Places",
+  TRUE ~ "Other")
+
+y_test_bin = case_when(
+  str_detect(y_test, regex("Haunted Places", ignore_case = TRUE)) ~ "Haunted Places",
+  TRUE ~ "Other")
+
+# Convertir a factor con niveles consistentes
+y_train_bin = factor(y_train_bin, levels = c("Other", "Haunted Places"))
+y_test_bin  = factor(y_test_bin,  levels = c("Other", "Haunted Places"))
+```
