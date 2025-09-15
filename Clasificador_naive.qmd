@@ -63,4 +63,95 @@ sum(is.na(stories$description))
 sum(stories$description == "")
 ```
 
+# ANÁLISIS DE PALABRAS
+*✏️ Realicen un pequeño análisis de texto utilizando la base de datos que scrapearon. La actividad de Mine sobre text mining les puede dar ideas y el código necesario para realizar este análisis.*
+
+```{r}
+#quitamos párrafos que no son parte de los relatos 
+stories <- stories |>
+  mutate(description = str_remove(description, "^You are here:.*?::\\s*"))  |>
+  mutate(description = str_remove(description, "(?s)The following comments are submitted by users of this site.*$"))
+```
+
+```{r}
+#Ver las primera historia para verificar borrado
+stories$description[1:1]
+```
+
+```{r}
+#Tokenizar
+stories_words <- stories |>
+  unnest_tokens(output = word, input = description)
+```
+
+```{r}
+#Limpiar palabras
+stories_clean = stories_words |>
+  anti_join(stop_words, by = "word")  |> #quitamos stop words
+  filter(!str_detect(word, "[0-9]")) #quito todo lo que tenga un número
+```
+
+```{r}
+#Frecuencia global de palabras
+frecuencia_global = stories_clean |>
+  count(word, sort = TRUE)
+
+#Gráfica con palabras más frecuentes
+frecuencia_global |>
+  slice_head(n = 30) |>
+  ggplot(aes(x = reorder(word, n), y = n)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Top palabras más frecuentes",
+       x = "Palabra", y = "Frecuencia")
+```
+
+```{r}
+# Frecuencia por relato
+frecuencia_por_relato = stories_clean |>
+  count(title, word, sort = TRUE)
+
+# Para cada relato, top 5 palabras
+top_por_relato = frecuencia_por_relato |>
+  group_by(title)  |>
+  slice_head(n = 5)  |>
+  ungroup()
+
+# Tabla de top palabras por relato
+top_por_relato |>
+  arrange(title, desc(n)) |>
+  head(10) |>
+  knitr::kable()
+```
+
+```{r}
+titles_to_plot = top_por_relato  |>
+  distinct(title)  |>
+  slice_head(n = 9)  |> #no. de relatos en la gráfica
+  pull(title)
+
+p = top_por_relato  |>
+  filter(title %in% titles_to_plot)  |>
+  mutate(word = reorder_within(word, n, title))  |>
+  ggplot(aes(x = n, y = word, fill = title)) +   #un color por gráfico
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ title, scales = "free_y") +
+  scale_y_reordered() +
+  scale_fill_brewer(palette = "Set3") + #paleta de colores
+  labs(title = "Top 5 palabras por relato",
+       x = "Frecuencia", y = NULL) +
+  theme_minimal(base_size = 10) +
+  theme(strip.text = element_text(face = "bold"),
+        panel.spacing = unit(0.1, "lines"))
+
+print(p)
+
+```
+
+Gracias al análisis de palabras determinamos que era necesario eliminar palabras que fueran stop words (nexos, preposiciones, pronombres, etc.) o que contuvieran números. Posteriormente, se filtraron aquellas palabras que se repitieran al menos 5 veces globalmente; ésto para eliminar ruido (tipo outliers) de nuestro clasificador. 
+
+
+
+
+
 
