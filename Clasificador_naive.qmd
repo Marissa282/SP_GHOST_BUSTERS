@@ -237,6 +237,30 @@ y_test = factor(y_test,    levels = levels(y_train))
 cm = confusionMatrix(pred_test, y_test)
 ```
 
+```{r}
+#matriz de confusión
+cm$table
+```
+
+```{r}
+cm$overall["Accuracy"] 
+```
+
+```{r}
+precision = cm$byClass[, "Pos Pred Value"] #precision
+precision
+```
+
+```{r}
+recall = cm$byClass[, "Sensitivity"] #recall
+recall
+```
+
+```{r}
+f1 = 2 * precision * recall / (precision + recall) #f1 score
+f1
+```
+
 ## naive_bayes()
 *✏️ Intenten utilizar la función naive_bayes() del paquete naivebayes para volver a ajustar su clasificador, ¿existe alguna diferencia?*
 
@@ -268,30 +292,6 @@ precision
 
 ```{r}
 recall = cm_nv$byClass[, "Sensitivity"] #recall
-recall
-```
-
-```{r}
-f1 = 2 * precision * recall / (precision + recall) #f1 score
-f1
-```
-
-```{r}
-#matriz de confusión
-cm$table
-```
-
-```{r}
-cm$overall["Accuracy"] 
-```
-
-```{r}
-precision = cm$byClass[, "Pos Pred Value"] #precision
-precision
-```
-
-```{r}
-recall = cm$byClass[, "Sensitivity"] #recall
 recall
 ```
 
