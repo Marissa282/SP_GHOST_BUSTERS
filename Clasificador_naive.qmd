@@ -318,3 +318,42 @@ y_test_bin = case_when(
 y_train_bin = factor(y_train_bin, levels = c("Other", "Haunted Places"))
 y_test_bin  = factor(y_test_bin,  levels = c("Other", "Haunted Places"))
 ```
+*✏️ Vuelvan a entrenar un clasificador naïve Bayes con ambas funciones, ¿hubo alguna mejora?*
+
+## e1071
+
+```{r}
+#  e1017
+#entrenar
+mod_nb_bin = naiveBayes(x = X_train, y = y_train_bin)
+#predecir
+pred_nb_bin = predict(mod_nb_bin, X_test)
+#mismos niveles para métricas
+pred_nb_bin = factor(pred_nb_bin, levels = levels(y_train_bin))
+y_test_bin = factor(y_test_bin,    levels = levels(y_train_bin))
+#resultados
+cm_nb_bin = confusionMatrix(pred_nb_bin, y_test_bin)
+cm_nb_bin$overall["Accuracy"]
+```
+```{r}
+cm_nb_bin$table
+```
+
+## naive_bayes()
+
+```{r}
+# naive_bayes()
+#entrenar
+mod_nb2_bin = naive_bayes(x = X_train, y = y_train_bin)
+#predecir
+pred_nb2_bin = predict(mod_nb2_bin, X_test)
+#Alinear niveles y métricas
+pred_nb2_bin = factor(pred_nb2_bin, levels = levels(y_train_bin))
+y_test_bin  = factor(y_test_bin,  levels = levels(y_train_bin))
+#resultados
+cm_nb2_bin = confusionMatrix(pred_nb2_bin, y_test_bin)   # data, reference
+cm_nb2_bin$overall["Accuracy"]
+```
+```{r}
+cm_nb2_bin$table
+```
