@@ -192,4 +192,38 @@ head(X_df, 10)
 ```
 Estamos usando un formato de sparse matrix que no necesita tanta memoria. Para visualizar que la conversión haya sido la desada, convertimos a formato de data frame y verificamos que todo estuviera de manera adecuada. 
 
+# Y MULTICLASE
+*✏️ Dividan la matriz de datos en training y test set. Y utilicen el training set para entrenar un clasificador naïve Bayes para predecir el tipo de evento paranormal.*
+
+```{r}
+y = factor(y)
+```
+
+```{r}
+#partición de X, y 
+#utlizamos proporción 80/20
+set.seed(123)
+idx_train = createDataPartition(y, p = 0.80, list = FALSE)
+idx_train = as.vector(idx_train)     # que sea vector, no matriz
+idx_test  = setdiff(seq_len(nrow(X)), idx_train)
+
+X_train = X[idx_train, , drop = FALSE]
+X_test = X[idx_test,  , drop = FALSE]
+y_train = y[idx_train]
+y_test = y[idx_test]
+```
+
+
+## e1071
+```{r}
+#entrenamos naive bayes 
+X_train = as.matrix(X_train) #pasamos a matriz densa (necesario para e1017)
+mod_nb_multi = naiveBayes(x = X_train, y = y_train)
+```
+
+```{r}
+#testeamos modelo
+X_test = as.matrix(X_test)   #convertimos a matriz densa 
+pred_test = predict(mod_nb_multi, X_test)
+```
 
