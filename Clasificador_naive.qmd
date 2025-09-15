@@ -150,7 +150,13 @@ print(p)
 
 Gracias al análisis de palabras determinamos que era necesario eliminar palabras que fueran stop words (nexos, preposiciones, pronombres, etc.) o que contuvieran números. Posteriormente, se filtraron aquellas palabras que se repitieran al menos 5 veces globalmente; ésto para eliminar ruido (tipo outliers) de nuestro clasificador. 
 
-
+```{r}
+#Utilizamos únicamete las palabras que se repiten al menos 5 veces globalmente
+stories_clean = stories_clean  |>
+  add_count(word, name = "tot")  |>
+  filter(tot >= 5)  |>   # hacemos columna para filtro
+  select(-tot)           # ocultamos la columna
+```
 
 
 
