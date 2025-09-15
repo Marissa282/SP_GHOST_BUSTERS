@@ -237,6 +237,45 @@ y_test = factor(y_test,    levels = levels(y_train))
 cm = confusionMatrix(pred_test, y_test)
 ```
 
+## naive_bayes()
+*✏️ Intenten utilizar la función naive_bayes() del paquete naivebayes para volver a ajustar su clasificador, ¿existe alguna diferencia?*
+
+```{r}
+#entrenamos naive_bayes()
+mod_nb2_multi = naive_bayes(x = X_train, y = y_train)
+pred_nb2_multi = predict(mod_nb2_multi, X_test)
+```
+
+```{r}
+#Alinear niveles y métricas
+pred_nb2_multi = factor(pred_nb2_multi, levels = levels(y_train))
+y_test = factor(y_test,  levels = levels(y_train))
+cm_nv = confusionMatrix(pred_nb2_multi, y_test)   # data, reference
+```
+
+```{r}
+cm_nv$table #matriz de confusión 
+```
+
+```{r}
+cm_nv$overall["Accuracy"]
+```
+
+```{r}
+precision = cm_nv$byClass[, "Pos Pred Value"] #precision
+precision
+```
+
+```{r}
+recall = cm_nv$byClass[, "Sensitivity"] #recall
+recall
+```
+
+```{r}
+f1 = 2 * precision * recall / (precision + recall) #f1 score
+f1
+```
+
 ```{r}
 #matriz de confusión
 cm$table
