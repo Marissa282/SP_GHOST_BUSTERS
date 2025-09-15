@@ -1,0 +1,177 @@
+---
+title: "web scraping"
+format: html
+---
+
+```{python}
+%pip install requests beautifulsoup4 pandas lxml
+import re
+import time
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+
+BASE_LIST = "https://www.yourghoststories.com/ghost-stories-chronological.php?page={page}"
+BASE_HOST = "https://www.yourghoststories.com"
+
+START_PAGE = 1
+END_PAGE   = 2
+PAUSE_SEC  = 0.7    
+
+#Utilidades
+def get_soup(url: str) -> BeautifulSoup:
+    #Descarga URL y regresa un BeautifulSoup listo para parsear.
+    r = requests.get(url, timeout=25, headers={"User-Agent":"Mozilla/5.0"})
+    r.raise_for_status()
+    # lxml es más tolerante con HTML real
+    return BeautifulSoup(r.text, "lxml")
+
+def abs_url(href: str) -> str:
+    #Normaliza a URL absoluta
+    if not href:
+        return ""
+    return href if href.startswith("http") else f"{BASE_HOST}/{href.lstrip('/')}"
+
+def pick_first_text(tag):
+    #Devuelve texto limpio del tag
+    return tag.get_text(" ", strip=True) if tag else ""
+
+def next_text_after_label(soup: BeautifulSoup, labels_regex: str) -> str:
+    #Busca etiquetas tipo 'Location:' / 'Type:' y retorna el texto vecino.
+    #Intenta varias estructuras: <b>Label:</b> Valor, spans, dt/dd, etc.
+    lab = soup.find(string=re.compile(labels_regex, re.I))
+    if not lab:
+        return ""
+    # Caso común: <b>Location:</b> City, Country
+    # → tomar el next_sibling textual o el texto del padre sin la etiqueta.
+    # 1) hermano textual inmediato
+    sib = lab.parent.next_sibling if hasattr(lab, "parent") else None
+    if sib:
+        if hasattr(sib, "get_text"):
+            txt = pick_first_text(sib)
+        else:
+            txt = str(sib).strip()
+        txt = re.sub(r"^\s*[:\-–]\s*", "", txt)
+        if txt:
+            return txt
+    # 2) buscar en elemento cercano (dd de un dt, o span siguiente)
+    if hasattr(lab, "parent"):
+        # dt->dd
+        dd = lab.parent.find_next("dd")
+        if dd:
+            return pick_first_text(dd)
+        # span/strong/b -> siguiente elemento con texto
+        nxt = lab.find_next(string=lambda s: s and s.strip() and s is not lab)
+        if nxt:
+            # Evitar repetir la propia etiqueta (si no tiene ':', puede ser ruido)
+            candidate = str(nxt).strip()
+            # Filtra si luce como otra etiqueta (termina con ':')
+            if not candidate.endswith(":"):
+                return candidate
+    return ""
+
+def extract_story_details(url: str) -> dict:
+    #Entra a una historia y extrae: title, location, story_type, description, source_url
+    soup = get_soup(url)
+
+    # Título: suele estar en <h1>, si no, en <title>
+    title = pick_first_text(soup.select_one("h1")) or pick_first_text(soup.select_one("title"))
+
+    # Lugar (Location) y Tipo (Category/Type)
+    location = next_text_after_label(soup, r"^\s*Location\s*:")
+    story_type = next_text_after_label(soup, r"^\s*(Category|Type|Story\s*Type)\s*:")
+
+    # Cuerpo/Descripción: probar selectores comunes y fallback
+    body_candidates = [
+        "#story",                        # id común
+        "[itemprop='articleBody']",
+        ".storyContent,.story-content,.storytext,.post-content,.entry-content,article",
+        "#content .story, #main .story, .single .content"
+    ]
+    description = ""
+    for sel in ",".join(body_candidates).split(","):
+        node = soup.select_one(sel.strip())
+        if not node:
+            continue
+        # Preferir párrafos; si no hay, tomar todo el texto del contenedor
+        ps = node.find_all(["p", "div"], recursive=True)
+        texts = [p.get_text(" ", strip=True) for p in ps if p.get_text(strip=True)]
+        description = "\n\n".join(t for t in texts if t)
+        if not description:
+            description = pick_first_text(node)
+        # depurar colas como "Share this story" o etiquetas
+        description = re.sub(r"\b(share|related|comments?)\b.*$", "", description, flags=re.I|re.S).strip()
+        if description:
+            break
+
+    # Fallback mínimo si no se detecta cuerpo: usa meta description
+    if not description:
+        meta = soup.find("meta", attrs={"name":"description"}) or soup.find("meta", attrs={"property":"og:description"})
+        description = (meta.get("content", "").strip() if meta else "") or ""
+
+    return {
+        "title": title,
+        "location": location,
+        "story_type": story_type,
+        "description": description,
+        "source_url": url
+    }
+
+def story_links_from_list(page_num: int):
+    #Extrae enlaces de historias desde la página de listado.
+    soup = get_soup(BASE_LIST.format(page=page_num))
+    links = soup.find_all("a", href=lambda h: h and "real-ghost-story.php" in h)
+    return [abs_url(a.get("href", "")) for a in links]
+
+# Flujo principal 
+seen, records = set(), []
+
+for p in range(START_PAGE, END_PAGE + 1):
+    try:
+        urls = story_links_from_list(p)
+    except Exception as e:
+        print(f"[WARN] No se pudo leer la página {p}: {e}")
+        continue
+
+    for u in urls:
+        if not u or u in seen:
+            continue
+        seen.add(u)
+        try:
+            data = extract_story_details(u)
+            # Validación mínima: debe tener título o descripción para guardar
+            if data["title"] or data["description"]:
+                records.append(data)
+                print(f"[OK] {data['title'][:80]}{'...' if len(data['title'])>80 else ''}")
+        except Exception as e:
+            print(f"[WARN] Falló {u}: {e}")
+        time.sleep(PAUSE_SEC)
+
+# Salida 
+df = pd.DataFrame.from_records(records, columns=["title","location","story_type","description","source_url"])
+df.to_csv("ghost_stories_full.csv", index=False)
+print(f"\nListo. {len(df)} historias guardadas en ghost_stories_full.csv")
+
+```
+
+```{python}
+#Se corren múltiples veces con diferentes parámetro y se unen los csv 
+
+# Lista con los nombres de tus archivos CSV
+archivos_csv = [
+    "data/yourghoststories_1_5.csv",
+    "data/yourghoststories_6_10.csv",
+    "data/yourghoststories_11_15.csv",
+    "data/yourghoststories_16_20.csv",
+    "data/yourghoststories_21_25.csv",
+    "data/yourghoststories_21_25.csv"
+]
+
+# Leer y concatenar todos los archivos en un solo DataFrame
+df_final = pd.concat([pd.read_csv(archivo) for archivo in archivos_csv], ignore_index=True)
+
+# Guardar en un nuevo CSV
+df_final.to_csv("df_finalisimo.csv", index=False)
+print("Archivos unidos y guardados como: df_finalisimo.csv")
+
+```
