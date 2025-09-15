@@ -1,6 +1,10 @@
 ---
-title: "Redes multinomiales"
-author: "Marissa"
+title: "Situación problema: Ghostbusters!"
+author:
+  - Marissa Luna
+  - Ximena Cantón
+  - Mariana León
+  - Nubia Garcidueñas
 format:
    html:
      toc: true
@@ -12,10 +16,51 @@ editor: source
 ---
 
 ```{r}
-install.packages("robotstxt")
-```
-```{r}
 library(robotstxt)
+library(tidyverse)
+library(stringr)
+library(tidytext)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(caret)
+```
+
+# WEB SCRAPING 
+*✏️ Utilicen la función paths_allowed() del paquete robotstxt para comprobar que el web scraping está permitido en esta página.*
+
+```{r}
+paths_allowed("https://www.yourghoststories.com")
+```
+El web scarping está permitido. El proceso de cómo se realizó se encuentra dentro del repositorio en el archivo webbb.qmd. 
+
+# LIMPIEZA
+Antes de realizar el análisis de palabras, se limipió el archivo csv generado por el web scraping.  
+
+```{r}
+stories = read_csv("data/stories_final.csv") 
+```
+
+```{r}
+#no. de filas antes de la limpieza
+nrow(stories)
+```
+
+```{r}
+
+stories = stories |>
+  drop_na() |>                             #quitamos NA 
+  filter(if_all(everything(), ~ .x != ""))  |> #quitamos vacíos 
+  distinct() #quitamos duplicados
+```
+
+```{r}
+#no. de filas después de la limpieza
+nrow(stories)
+
+#suma de NA y ""
+sum(is.na(stories$description))
+sum(stories$description == "")
 ```
 
 
