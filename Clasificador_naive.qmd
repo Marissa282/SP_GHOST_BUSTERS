@@ -227,3 +227,37 @@ X_test = as.matrix(X_test)   #convertimos a matriz densa
 pred_test = predict(mod_nb_multi, X_test)
 ```
 
+*✏️ Reporten la accuracy, precision, recall, F1-score y matriz de confusión con sus respectivas interpretaciones.*
+
+```{r}
+# mismos niveles para métricas
+pred_test = factor(pred_test, levels = levels(y_train))
+y_test = factor(y_test,    levels = levels(y_train))
+
+cm = confusionMatrix(pred_test, y_test)
+```
+
+```{r}
+#matriz de confusión
+cm$table
+```
+
+```{r}
+cm$overall["Accuracy"] 
+```
+
+```{r}
+precision = cm$byClass[, "Pos Pred Value"] #precision
+precision
+```
+
+```{r}
+recall = cm$byClass[, "Sensitivity"] #recall
+recall
+```
+
+```{r}
+f1 = 2 * precision * recall / (precision + recall) #f1 score
+f1
+```
+
